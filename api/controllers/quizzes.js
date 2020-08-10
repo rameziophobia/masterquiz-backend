@@ -1,19 +1,40 @@
 const mongoose = require('mongoose');
 const model = mongoose.model('quiz');
 
+const shuffle = array => {
+    array.sort(() => Math.random() - 0.5);
+}
+
+const shuffleQuestionsAndAnswers = quizzes => {
+    for (let quiz of quizzes) {
+        let questions = quiz.questions;
+        shuffle(questions);
+        const shuffled = questions.map(question => {
+            const choices = [...question.choices, question.answer];
+            shuffle(choices);
+            return {
+                _id: question._id,
+                title: question.title,
+                choices: choices
+            }
+        });
+        quiz.questions = shuffled;
+    }
+}
+
 const quizList = async(req, res) => {
     try {
-        let results;
+        let quizzes;
         if (req.query.genres) {
-            results = await model.find({ genres: { $all: req.query.genres } });
+            quizzes = await model.find({ genres: { $all: req.query.genres } });
         } else {
-            results = await model.find();
-            console.log(results);
+            quizzes = await model.find();
         }
-
+        console.log(quizzes);
+        shuffleQuestionsAndAnswers(quizzes);
         res
             .status(200)
-            .json(results);
+            .json(quizzes);
     } catch (err) {
         res
             .status(404)
@@ -25,7 +46,7 @@ const createQuiz = (req, res) => {
     model.create({
             name: req.body.name,
             author: req.body.author,
-            // genres: req.body.genres.split(","), //todo cannot split 3alla undefined
+            genres: req.body.genres,
             questions: req.body.questions
         },
         (err, quiz) => {
@@ -61,7 +82,7 @@ const readOneQuiz = (req, res) => {
         });
 };
 
-const updateQuiz = (req, res) => {
+const attemptQuiz = (req, res) => {
     // todo
     if (!req.params.quizId) {
         return res
@@ -128,6 +149,6 @@ module.exports = {
     quizList,
     createQuiz,
     readOneQuiz,
-    updateQuiz,
+    attemptQuiz,
     deleteQuiz
 };

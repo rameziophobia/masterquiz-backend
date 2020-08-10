@@ -10,7 +10,7 @@ router
 router
     .route('/quizzes/:quizId')
     .get(ctrlQuizzes.readOneQuiz)
-    .put(ctrlQuizzes.updateQuiz)
+    .put(ctrlQuizzes.attemptQuiz)
     .delete(ctrlQuizzes.deleteQuiz);
 
 module.exports = router;

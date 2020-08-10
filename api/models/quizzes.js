@@ -1,5 +1,17 @@
 const mongoose = require('mongoose');
 
+
+const questionAttemptSchema = new mongoose.Schema({
+    user: {
+        type: String,
+        required: true
+    },
+    answer: {
+        type: String,
+        required: true
+    }
+});
+
 const questionSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -12,7 +24,8 @@ const questionSchema = new mongoose.Schema({
     choices: {
         type: [String],
         // validate: v => v == null || v.length > 0 // at least 1 false choice ?
-    }
+    },
+    attempts: [questionAttemptSchema]
 });
 
 const quizSchema = new mongoose.Schema({
@@ -41,6 +54,10 @@ const quizSchema = new mongoose.Schema({
     },
     questions: {
         type: [questionSchema],
+        required: true
+    },
+    description: {
+        type: String,
         required: true
     }
 });
