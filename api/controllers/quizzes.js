@@ -43,12 +43,7 @@ const quizList = async(req, res) => {
 };
 
 const createQuiz = (req, res) => {
-    model.create({
-            name: req.body.name,
-            author: req.body.author,
-            genres: req.body.genres,
-            questions: req.body.questions
-        },
+    model.create(req.body,
         (err, quiz) => {
             if (err) {
                 res
@@ -77,13 +72,12 @@ const readOneQuiz = (req, res) => {
             } else {
                 return res
                     .status(200)
-                    .json(location);
+                    .json(quiz);
             }
         });
 };
 
 const attemptQuiz = (req, res) => {
-    // todo
     if (!req.params.quizId) {
         return res
             .status(404)
@@ -93,8 +87,7 @@ const attemptQuiz = (req, res) => {
     }
     model
         .findById(req.params.quizId)
-        // .select('-x -y')
-        .exec((err, quiz) => {
+        .exec(async(err, quiz) => {
             if (!quiz) {
                 return res
                     .status(404)
@@ -106,18 +99,15 @@ const attemptQuiz = (req, res) => {
                     .status(400)
                     .json(err);
             }
-            quiz.author = req.body.author;
-            quiz.save((err, quiz) => {
-                if (err) {
-                    res
-                        .status(404)
-                        .json(err);
-                } else {
-                    res
-                        .status(200)
-                        .json(quiz);
-                }
-            });
+            const answerAttempts = req.body.answers;
+            const user = req.body.user;
+            let score = 0;
+            for (const answerAttempt of answerAttempts) {
+                score = await saveQuestionAttempt(req, answerAttempt, user, score, res);
+            }
+            res
+                .status(200)
+                .json({ score });
         });
 };
 
@@ -152,3 +142,31 @@ module.exports = {
     attemptQuiz,
     deleteQuiz
 };
+
+async function saveQuestionAttempt(req, answerAttempt, user, score, res) {
+    await model.findOne({
+        '_id': req.params.quizId
+    }, {
+        "questions": {
+            "$elemMatch": {
+                "_id": answerAttempt.questionId
+            }
+        },
+    }).then(parentQuiz => {
+        console.log("question", parentQuiz.questions[0]);
+        const question = parentQuiz.questions[0];
+        question.attempts.push({
+            user: user,
+            answer: answerAttempt.answer
+        });
+        if (answerAttempt.answer === question.answer) {
+            score += 1;
+        }
+        parentQuiz.save();
+    }).catch(err => {
+        res
+            .status(400)
+            .json(err);
+    });
+    return score;
+}
