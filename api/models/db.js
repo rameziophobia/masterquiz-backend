@@ -3,6 +3,10 @@ const host = process.env.DB_HOST || '127.0.0.1'
 const dbURL = `mongodb://${host}/MasterQuiz`;
 const readLine = require('readline');
 
+if (process.env.NODE_ENV === 'production') {
+    dbURL = process.env.MLAB_URI;
+}
+
 const connect = () => {
     setTimeout(() => mongoose.connect(dbURL, { useNewUrlParser: true, useCreateIndex: true }), 1000);
 }
