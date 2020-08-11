@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const host = process.env.DB_HOST || '127.0.0.1'
-const dbURL = `mongodb://${host}/MasterQuiz`;
+const host = '127.0.0.1'
+let dbURL = `mongodb://${host}/MasterQuiz`;
 const readLine = require('readline');
 
 if (process.env.NODE_ENV === 'production') {
