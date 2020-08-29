@@ -122,15 +122,20 @@ const deleteQuiz = (req, res) => {
                         .status(404)
                         .json(err);
                 }
+                if (quiz == null) {
+                    return res
+                        .status(404)
+                        .json({ "message": "No matching quiz found" });
+                }
                 res
                     .status(204)
                     .json(null);
             });
     } else {
         res
-            .status(404)
+            .status(400)
             .json({
-                "message": "No Quiz"
+                "message": "please provide a quizId"
             });
     }
 };
