@@ -30,7 +30,7 @@ const quizList = async(req, res) => {
         } else {
             quizzes = await model.find();
         }
-        console.log(quizzes);
+        // console.log(quizzes);
         shuffleQuestionsAndAnswers(quizzes);
         res
             .status(200)
@@ -158,7 +158,7 @@ async function saveQuestionAttempt(req, answerAttempt, user, score, res) {
             }
         },
     }).then(parentQuiz => {
-        console.log("question", parentQuiz.questions[0]);
+        // console.log("question", parentQuiz.questions[0]);
         const question = parentQuiz.questions[0];
         question.attempts.push({
             user: user,
