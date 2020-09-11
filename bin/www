@@ -87,16 +87,17 @@ const server = http.createServer(app);
  */
 
 const io = require('socket.io')(server);
-io.on('connection', (socket) => {
-    console.log('user connected');
-});
 
-const workspaces = io.of(/^\/[a-zA-Z0-9]+$/)
-workspaces.on('connection', (socket) => {
-    const workspace = socket.nsp;
-    workspace.emit(`hello ${workspace}`);
-    console.log(`user connected to ${workspace}`);
-});
+const workspaces = io.of(/^\/session\/[a-zA-Z0-9]+$/)
+    .on('connection', (socket) => {
+        console.log('sad workspace')
+        const workspace = socket.nsp;
+        console.log(`user connected to ${workspace.name}`);
+        workspace.on('answer', () => {
+            console.log(data);
+        });
+        workspace.emit('msg', `hello ${workspace.name}`);
+    });
 
 
 server.listen(port, () => {

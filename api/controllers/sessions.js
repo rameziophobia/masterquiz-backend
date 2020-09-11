@@ -5,6 +5,7 @@ const getNewSessionCode = (req, res) => {
     while (current_sessions.has(code)) {
         code = random6alphanum();
     }
+    current_sessions.set(code, 1)
     res
         .status(200)
         .json(code);
