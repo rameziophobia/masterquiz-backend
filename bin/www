@@ -87,67 +87,7 @@ const server = http.createServer(app);
  */
 
 const io = require('socket.io')(server);
-
-const participants = new Map();
-let startQuizTimer;
-
-const workspaces = io.of(/^\/session\/[a-zA-Z0-9]+$/)
-    .on('connection', (socket) => {
-        const workspace = socket.nsp;
-        console.log(`user connected to ${workspace.name}`);
-        console.log('number of connected clients: ' + Object.keys(workspace.sockets).length)
-        socket.on('answer', (data) => {
-            console.log(data);
-            //todo handle answer?
-        });
-
-        socket.on('addParticipant', (data) => {
-            console.log(data);
-
-            if (!participants.has(workspace.name)) {
-                participants.set(workspace.name, []);
-            }
-            console.log("parts" + participants.get(workspace.name));
-            socket.emit('oldParticipants', participants.get(workspace.name));
-            participants.get(workspace.name).push(data)
-            workspace.emit('participantAdded', data);
-            clearTimeout(startQuizTimer);
-        });
-
-
-        socket.on('msg', (data) => {
-            console.log(data);
-            //todo handle msg?
-            workspace.emit('msg', data);
-        });
-
-
-        socket.on('toggleReady', (hash) => {
-            const participant = participants.get(workspace.name)
-                .find(participant => participant.hash === hash);
-            participant.isReady = !participant.isReady;
-            workspace.emit('toggleReady', hash);
-            clearTimeout(startQuizTimer);
-            startQuizIfAllready(workspace);
-        });
-
-
-        workspace.emit('msg', `hello ${workspace.name}`);
-    });
-
-const startQuizIfAllready = (workspace) => {
-    if (areAllReady(participants.get(workspace.name))) {
-        workspace.emit('startQuizAnimation'); //todo
-        startQuizTimer = setTimeout(() => {
-            workspace.emit('startQuiz');
-        }, 5000);
-    };
-}
-
-const areAllReady = (workspace_participants) => {
-    return workspace_participants
-        .every(participant => participant.isReady);
-}
+require('../sessions/quizSessions')(io);
 
 server.listen(port, () => {
     console.log(`started on port: ${port}`);
