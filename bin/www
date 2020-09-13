@@ -88,24 +88,43 @@ const server = http.createServer(app);
 
 const io = require('socket.io')(server);
 
+const participants = []
 const workspaces = io.of(/^\/session\/[a-zA-Z0-9]+$/)
     .on('connection', (socket) => {
-        console.log('sad workspace')
         const workspace = socket.nsp;
         console.log(`user connected to ${workspace.name}`);
+        console.log('number of connected clients: ' + Object.keys(workspace.sockets).length)
         socket.on('answer', (data) => {
             console.log(data);
             //todo handle answer?
         });
 
+        socket.on('addParticipant', (data) => {
+            console.log(data);
+            socket.emit('oldParticipants', participants);
+            participants.push(data)
+            workspace.emit('participantAdded', data);
+        });
+
+
         socket.on('msg', (data) => {
             console.log(data);
             //todo handle msg?
-            socket.emit('msg', data);
+            workspace.emit('msg', data);
         });
+
+
+        socket.on('toggleReady', (hash) => {
+            const participant = participants
+                .find(participant => participant.hash === hash);
+            participant.isReady = !participant.isReady;
+            workspace.emit('toggleReady', hash);
+        });
+
 
         workspace.emit('msg', `hello ${workspace.name}`);
     });
+
 
 
 server.listen(port, () => {
