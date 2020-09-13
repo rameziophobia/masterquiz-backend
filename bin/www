@@ -88,7 +88,9 @@ const server = http.createServer(app);
 
 const io = require('socket.io')(server);
 
-const participants = []
+const participants = new Map();
+let startQuizTimer;
+
 const workspaces = io.of(/^\/session\/[a-zA-Z0-9]+$/)
     .on('connection', (socket) => {
         const workspace = socket.nsp;
@@ -101,9 +103,15 @@ const workspaces = io.of(/^\/session\/[a-zA-Z0-9]+$/)
 
         socket.on('addParticipant', (data) => {
             console.log(data);
-            socket.emit('oldParticipants', participants);
-            participants.push(data)
+
+            if (!participants.has(workspace.name)) {
+                participants.set(workspace.name, []);
+            }
+            console.log("parts" + participants.get(workspace.name));
+            socket.emit('oldParticipants', participants.get(workspace.name));
+            participants.get(workspace.name).push(data)
             workspace.emit('participantAdded', data);
+            clearTimeout(startQuizTimer);
         });
 
 
@@ -115,17 +123,31 @@ const workspaces = io.of(/^\/session\/[a-zA-Z0-9]+$/)
 
 
         socket.on('toggleReady', (hash) => {
-            const participant = participants
+            const participant = participants.get(workspace.name)
                 .find(participant => participant.hash === hash);
             participant.isReady = !participant.isReady;
             workspace.emit('toggleReady', hash);
+            clearTimeout(startQuizTimer);
+            startQuizIfAllready(workspace);
         });
 
 
         workspace.emit('msg', `hello ${workspace.name}`);
     });
 
+const startQuizIfAllready = (workspace) => {
+    if (areAllReady(participants.get(workspace.name))) {
+        workspace.emit('startQuizAnimation'); //todo
+        startQuizTimer = setTimeout(() => {
+            workspace.emit('startQuiz');
+        }, 5000);
+    };
+}
 
+const areAllReady = (workspace_participants) => {
+    return workspace_participants
+        .every(participant => participant.isReady);
+}
 
 server.listen(port, () => {
     console.log(`started on port: ${port}`);
