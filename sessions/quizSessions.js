@@ -8,6 +8,7 @@ class SessionModel {
     answers = new Map();
     startQuizTimer;
     currentQuestionId;
+    currentQuestionIndex = 0;
     currentQuestionTimeStart;
     questionTimer;
     quizId;
@@ -49,18 +50,24 @@ class SessionModel {
     }
 
     startQuestions(index = 0) {
+        this.currentQuestionIndex = index;
         if (this.quiz.questions.length == index + 1) {
             //todo finishedQuiz
         } else {
             this.currentQuestionId = this.quiz.questions[index]._id;
             this.currentQuestionTimeStart = Date.now();
+            this.workspace.emit('nextQuestion');
             this.questionTimer = setTimeout(() => {
-                // todo
-                this.workspace.emit('nextQuestion');
                 this.workspace.emit('allAnswered', this.currentQuestionAnswers);
-                this.startQuestions(index + 1);
-            }, 35000 /* todo */ );
+                this.startQuestionTransition(index + 1);
+            }, 30000);
         }
+    }
+
+    startQuestionTransition(index) {
+        setTimeout(() => {
+            this.startQuestions(index);
+        }, 7000)
     }
 
     processAnswer(data, participant) {
@@ -71,7 +78,9 @@ class SessionModel {
             this.workspace.emit('answerLocked', participant.hash);
 
             if (this.participants.length === this.currentQuestionAnswers.length) {
+                clearTimeout(this.questionTimer);
                 this.workspace.emit('allAnswered', this.currentQuestionAnswers);
+                this.startQuestionTransition(this.currentQuestionIndex + 1);
             }
         } catch (e) {
             console.log('Error in processing answer');
