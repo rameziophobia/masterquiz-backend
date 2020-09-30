@@ -30,6 +30,7 @@ class SessionModel {
     }
 
     clearTimeout() {
+        this.workspace.emit('cancelQuizCountdown');
         clearTimeout(this.startQuizTimer);
     }
 
@@ -175,7 +176,7 @@ module.exports = (io) => {
 
     const startQuizIfAllready = (workspace) => {
         if (sessionModels.has(workspace.name) && sessionModels.get(workspace.name).areAllReady()) {
-            workspace.emit('startQuizAnimation');
+            workspace.emit('startQuizCountdown');
             const session = sessionModels.get(workspace.name);
             const startQuizDelay = 5000;
             session.startquizTimer = setTimeout(() => {
