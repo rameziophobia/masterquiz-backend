@@ -29,8 +29,9 @@ class SessionModel {
         this.workspace = workspace;
     }
 
-    clearTimeout() {
+    clearStartTimeout() {
         this.workspace.emit('cancelQuizCountdown');
+        console.log('cancelQuizCountdown' + this.startQuizTimer);
         clearTimeout(this.startQuizTimer);
     }
 
@@ -73,6 +74,7 @@ class SessionModel {
 
     processAnswer(data, participant) {
         try {
+            console.log(participant)
             const currentQuestionAnswers = this.answers.get(this.currentQuestionId);
             const thisAnswer = { hash: participant.hash, answer: data, time: this.calculateTimeDiff() };
             currentQuestionAnswers.push(thisAnswer);
@@ -130,6 +132,7 @@ module.exports = (io) => {
             socket.on('addParticipant', (data) => {
                 console.log(data);
                 thisParticipant = data;
+                console.log(thisParticipant);
 
                 if (!sessionModels.has(workspace.name)) {
                     sessionModels.set(workspace.name, new SessionModel(workspace));
@@ -145,7 +148,7 @@ module.exports = (io) => {
 
                 workspace.emit('participantAdded', data);
 
-                session.clearTimeout();
+                session.clearStartTimeout();
             });
 
 
@@ -163,7 +166,7 @@ module.exports = (io) => {
 
                     participant.isReady = !participant.isReady;
                     workspace.emit('toggleReady', hash);
-                    sessionModels.get(workspace.name).clearTimeout();
+                    sessionModels.get(workspace.name).clearStartTimeout();
                     startQuizIfAllready(workspace);
                 } else {
                     console.log('trying to toggle ready for a non existant workspace')
@@ -179,10 +182,10 @@ module.exports = (io) => {
             workspace.emit('startQuizCountdown');
             const session = sessionModels.get(workspace.name);
             const startQuizDelay = 5000;
-            session.startquizTimer = setTimeout(() => {
+            session.startQuizTimer = (setTimeout(() => {
                 workspace.emit('startQuiz');
                 sessionModels.get(workspace.name).startQuiz();
-            }, startQuizDelay)
+            }, startQuizDelay));
         }
     }
 };
