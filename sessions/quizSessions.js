@@ -12,6 +12,7 @@ class SessionModel {
     currentQuestionTimeStart;
     questionTimer;
     quizId;
+    acceptingAnswers = true;
 
     _quiz;
     workspace;
@@ -31,7 +32,6 @@ class SessionModel {
 
     clearStartTimeout() {
         this.workspace.emit('cancelQuizCountdown');
-        console.log('cancelQuizCountdown' + this.startQuizTimer);
         clearTimeout(this.startQuizTimer);
     }
 
@@ -46,15 +46,17 @@ class SessionModel {
 
     setupQuiz() {
         for (const question of this.quiz.questions) {
-            this.answers.set(question._id, []);
+            this.answers.set(String(question._id), []);
         }
         console.log('quiz got setupped')
     }
 
     startQuestions(index = 0) {
         this.currentQuestionIndex = index;
-        if (this.quiz.questions.length == index + 1) {
+        if (index >= this.quiz.questions.length) {
+            console.log('finished quiz');
             //todo finishedQuiz
+            //todo this is late 4000ms/7000ms
         } else {
             this.currentQuestionId = this.quiz.questions[index]._id;
             this.currentQuestionTimeStart = Date.now();
@@ -67,29 +69,35 @@ class SessionModel {
     }
 
     startQuestionTransition(index) {
+        this.acceptingAnswers = false;
         setTimeout(() => {
+            this.acceptingAnswers = true;
             this.startQuestions(index);
-        }, 7000)
+        }, 4000)
     }
 
     processAnswer(data, participant) {
-        try {
-            console.log(participant)
-            const currentQuestionAnswers = this.answers.get(this.currentQuestionId);
+        if (this.acceptingAnswers) {
+            const currentQuestionAnswers = this.answers.get(String(this.currentQuestionId));
             const thisAnswer = { hash: participant.hash, answer: data, time: this.calculateTimeDiff() };
-            currentQuestionAnswers.push(thisAnswer);
+            try {
+                currentQuestionAnswers.push(thisAnswer);
+            } catch (e) {
+                console.log('Error in processing answer (adding to current answers)');
+                console.log(e.message);
+                return;
+            }
             this.workspace.emit('answerLocked', participant.hash);
 
-            if (this.participants.length === this.currentQuestionAnswers.length) {
+            if (this.participants.length === currentQuestionAnswers.length) {
                 clearTimeout(this.questionTimer);
-                this.workspace.emit('allAnswered', this.currentQuestionAnswers);
+                this.workspace.emit('allAnswered', currentQuestionAnswers);
                 this.startQuestionTransition(this.currentQuestionIndex + 1);
             }
-        } catch (e) {
-            console.log('Error in processing answer');
-            console.log(e.message);
+            console.log(this.answers)
+        } else {
+            console.log('not accepting answers now, transitioning questions')
         }
-
     }
 
     calculateTimeDiff = () => {
@@ -118,7 +126,6 @@ module.exports = (io) => {
             console.log('number of connected clients: ' + Object.keys(workspace.sockets).length)
 
             socket.on('answer', (data) => {
-                console.log(data);
                 if (sessionModels.has(workspace.name)) {
                     const session = sessionModels.get(workspace.name);
                     session.processAnswer(data, thisParticipant);
@@ -130,9 +137,7 @@ module.exports = (io) => {
             })
 
             socket.on('addParticipant', (data) => {
-                console.log(data);
                 thisParticipant = data;
-                console.log(thisParticipant);
 
                 if (!sessionModels.has(workspace.name)) {
                     sessionModels.set(workspace.name, new SessionModel(workspace));
