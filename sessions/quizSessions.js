@@ -55,8 +55,9 @@ class SessionModel {
         this.currentQuestionIndex = index;
         if (index >= this.quiz.questions.length) {
             console.log('finished quiz');
-            //todo finishedQuiz
-            //todo this is late 4000ms/7000ms
+
+            this.saveToDB();
+            sessionModels.delete(this.workspace.name);
         } else {
             this.currentQuestionId = this.quiz.questions[index]._id;
             this.currentQuestionTimeStart = Date.now();
@@ -65,6 +66,40 @@ class SessionModel {
                 this.workspace.emit('allAnswered', this.currentQuestionAnswers);
                 this.startQuestionTransition(index + 1);
             }, 30000);
+        }
+    }
+
+    saveToDB() {
+        console.log("saving quiz to db");
+        model
+            .findById(this.quizId)
+            .exec(async(err, quiz) => {
+                if (!quiz) {
+                    return { "message": "quiz not found" };
+                } else if (err) {
+                    return { "message": "quiz not found, error with the DB" };
+                } else {
+                    console.log('quiz found');
+                    this.addAnswerAttemptsToQuiz(quiz);
+                    await quiz.save();
+                    console.log("saving quiz to db succeeded");
+                }
+            });
+    }
+
+    addAnswerAttemptsToQuiz() {
+        for (const [questionId, answerObjs] of this.answers) {
+            const dbQuestion = quiz.questions.find(
+                question => String(question._id) == String(questionId));
+            for (const answerObj of answerObjs) {
+                const attempt = {
+                    user: answerObj.hash,
+                    answer: answerObj.answer,
+                    score: answerObj.time,
+                    correct: answerObj.answer == dbQuestion.answer
+                };
+                dbQuestion.attempts.push(attempt);
+            }
         }
     }
 
