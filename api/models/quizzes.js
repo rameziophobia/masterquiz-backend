@@ -9,6 +9,14 @@ const questionAttemptSchema = new mongoose.Schema({
     answer: {
         type: String,
         required: true
+    },
+    score: {
+        type: Number,
+        required: true
+    },
+    correct: {
+        type: Boolean,
+        required: true
     }
 });
 
