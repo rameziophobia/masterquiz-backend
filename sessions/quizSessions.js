@@ -1,11 +1,13 @@
 const ctrlQuizzes = require('../api/controllers/quizzes');
 const mongoose = require('mongoose');
 const model = mongoose.model('quiz');
+const QUESTION_ANSWER_INTERVAL = 30000;
 
 class SessionModel {
 
     participants = [];
     answers = new Map();
+    participantNames = new Map();
     startQuizTimer;
     currentQuestionId;
     currentQuestionIndex = 0;
@@ -65,12 +67,12 @@ class SessionModel {
             this.questionTimer = setTimeout(() => {
                 this.workspace.emit('allAnswered', this.currentQuestionAnswers);
                 this.startQuestionTransition(index + 1);
-            }, 30000);
+            }, QUESTION_ANSWER_INTERVAL);
         }
     }
 
     saveToDB() {
-        console.log("saving quiz to db");
+        console.log("saving quiz attempts to db");
         model
             .findById(this.quizId)
             .exec(async(err, quiz) => {
@@ -81,26 +83,52 @@ class SessionModel {
                 } else {
                     console.log('quiz found');
                     this.addAnswerAttemptsToQuiz(quiz);
-                    await quiz.save();
-                    console.log("saving quiz to db succeeded");
+                    try {
+                        await quiz.save();
+                    } catch {
+                        return { "message": "could not save quiz attempt to DB" };
+                    }
+                    console.log("saving quiz attempts to db succeeded");
                 }
             });
     }
 
-    addAnswerAttemptsToQuiz() {
+    addAnswerAttemptsToQuiz(quiz) {
         for (const [questionId, answerObjs] of this.answers) {
             const dbQuestion = quiz.questions.find(
                 question => String(question._id) == String(questionId));
             for (const answerObj of answerObjs) {
+                const isCorrect = answerObj.answer == dbQuestion.answer;
                 const attempt = {
-                    user: answerObj.hash,
+                    user: answerObj.user,
                     answer: answerObj.answer,
-                    score: answerObj.time,
-                    correct: answerObj.answer == dbQuestion.answer
+                    time: answerObj.time,
+                    score: this.calculateAnswerScore(answerObj.time, isCorrect),
+                    isCorrect: isCorrect
                 };
                 dbQuestion.attempts.push(attempt);
             }
+
+            let answeredParticipants = answerObjs.map(a => a.hash);
+            const timedOutParticipants = this.participants.filter(
+                participant => !answeredParticipants.includes(participant.hash));
+            for (const participant of timedOutParticipants) {
+                const attempt = {
+                    user: participant.name,
+                    answer: " ",
+                    time: -1,
+                    score: 0,
+                    isCorrect: false
+                };
+                dbQuestion.attempts.push(attempt);
+            }
+
+
         }
+    }
+
+    calculateAnswerScore(time, isCorrect) {
+        return (100 + (QUESTION_ANSWER_INTERVAL / 1000) - time) * isCorrect;
     }
 
     startQuestionTransition(index) {
@@ -114,7 +142,12 @@ class SessionModel {
     processAnswer(data, participant) {
         if (this.acceptingAnswers) {
             const currentQuestionAnswers = this.answers.get(String(this.currentQuestionId));
-            const thisAnswer = { hash: participant.hash, answer: data, time: this.calculateTimeDiff() };
+            const thisAnswer = {
+                hash: participant.hash,
+                answer: data,
+                time: this.calculateTimeDiff(),
+                user: this.participantNames.get(participant.hash)
+            };
             try {
                 currentQuestionAnswers.push(thisAnswer);
             } catch (e) {
@@ -147,6 +180,9 @@ class SessionModel {
         return seconds;
     };
 
+    addParticipantName(hash, name) {
+        this.participantNames.set(hash, name);
+    }
 }
 
 const sessionModels = new Map();
@@ -188,6 +224,7 @@ module.exports = (io) => {
 
                 workspace.emit('participantAdded', data);
 
+                session.addParticipantName(data.hash, data.name);
                 session.clearStartTimeout();
             });
 

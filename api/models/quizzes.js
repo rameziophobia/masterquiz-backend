@@ -14,7 +14,11 @@ const questionAttemptSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    correct: {
+    time: {
+        type: Number,
+        required: true
+    },
+    isCorrect: {
         type: Boolean,
         required: true
     }
