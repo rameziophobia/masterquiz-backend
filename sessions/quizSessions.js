@@ -62,6 +62,7 @@ class SessionModel {
             sessionModels.delete(this.workspace.name);
         } else {
             this.currentQuestionId = this.quiz.questions[index]._id;
+            this.currentQuestionCorrectAnswer = this.quiz.questions[index].answer;
             this.currentQuestionTimeStart = Date.now();
             this.workspace.emit('nextQuestion');
             this.questionTimer = setTimeout(() => {
@@ -98,15 +99,7 @@ class SessionModel {
             const dbQuestion = quiz.questions.find(
                 question => String(question._id) == String(questionId));
             for (const answerObj of answerObjs) {
-                const isCorrect = answerObj.answer == dbQuestion.answer;
-                const attempt = {
-                    user: answerObj.user,
-                    answer: answerObj.answer,
-                    time: answerObj.time,
-                    score: this.calculateAnswerScore(answerObj.time, isCorrect),
-                    isCorrect: isCorrect
-                };
-                dbQuestion.attempts.push(attempt);
+                dbQuestion.attempts.push(answerObj);
             }
 
             let answeredParticipants = answerObjs.map(a => a.hash);
@@ -142,11 +135,15 @@ class SessionModel {
     processAnswer(data, participant) {
         if (this.acceptingAnswers) {
             const currentQuestionAnswers = this.answers.get(String(this.currentQuestionId));
+            const isCorrect = data == this.currentQuestionCorrectAnswer;
+            const time = this.calculateTimeDiff();
             const thisAnswer = {
                 hash: participant.hash,
                 answer: data,
-                time: this.calculateTimeDiff(),
-                user: this.participantNames.get(participant.hash)
+                time: time,
+                user: this.participantNames.get(participant.hash),
+                score: this.calculateAnswerScore(time, isCorrect),
+                isCorrect: isCorrect
             };
             try {
                 currentQuestionAnswers.push(thisAnswer);
