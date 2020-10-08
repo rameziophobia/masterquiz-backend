@@ -12,6 +12,7 @@ class SessionModel {
     currentQuestionId;
     currentQuestionIndex = 0;
     currentQuestionTimeStart;
+    currentQuestionAnswers = []
     questionTimer;
     quizId;
     acceptingAnswers = true;
@@ -66,9 +67,29 @@ class SessionModel {
             this.currentQuestionTimeStart = Date.now();
             this.workspace.emit('nextQuestion');
             this.questionTimer = setTimeout(() => {
+                this.addEmptyAnswers();
                 this.workspace.emit('allAnswered', this.currentQuestionAnswers);
                 this.startQuestionTransition(index + 1);
             }, QUESTION_ANSWER_INTERVAL);
+        }
+    }
+
+    addEmptyAnswers() {
+        let answeredParticipants = this.currentQuestionAnswers.map(a => a.hash);
+        const timedOutParticipants = this.participants.filter(
+            participant => !answeredParticipants.includes(participant.hash));
+        console.log(timedOutParticipants);
+        console.log(this.participants);
+            for (const participant of timedOutParticipants) {
+            const attempt = {
+                user: participant.name,
+                answer: " ",
+                time: -1,
+                score: 0,
+                isCorrect: false
+            };
+            console.log(attempt);
+            this.currentQuestionAnswers.push(attempt);
         }
     }
 
@@ -101,22 +122,6 @@ class SessionModel {
             for (const answerObj of answerObjs) {
                 dbQuestion.attempts.push(answerObj);
             }
-
-            let answeredParticipants = answerObjs.map(a => a.hash);
-            const timedOutParticipants = this.participants.filter(
-                participant => !answeredParticipants.includes(participant.hash));
-            for (const participant of timedOutParticipants) {
-                const attempt = {
-                    user: participant.name,
-                    answer: " ",
-                    time: -1,
-                    score: 0,
-                    isCorrect: false
-                };
-                dbQuestion.attempts.push(attempt);
-            }
-
-
         }
     }
 
