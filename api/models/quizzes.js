@@ -66,7 +66,13 @@ const quizSchema = new mongoose.Schema({
     },
     questions: {
         type: [questionSchema],
-        required: true
+        required: true,
+        validate: [(questions) => {
+            return questions.every(q => {
+                const uniqueFields = new Set([...q.choices, q.answer]);
+                return uniqueFields.size == q.choices.length + 1;
+            })
+        }, "question [...choices, answer] should be unique for all questions"]
     },
     description: {
         type: String,
