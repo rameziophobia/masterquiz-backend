@@ -135,6 +135,11 @@ class SessionModel {
     processAnswer(data, participant) {
         if (this.acceptingAnswers) {
             const currentQuestionAnswers = this.answers.get(String(this.currentQuestionId));
+            const hasParticipantAnswered = this.currentQuestionAnswers.findIndex(
+                answer => answer.hash == participant.hash) != -1;
+            if(hasParticipantAnswered){
+                return;
+            }
             const isCorrect = data == this.currentQuestionCorrectAnswer;
             const time = this.calculateTimeDiff();
             const thisAnswer = {
