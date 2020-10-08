@@ -5,7 +5,7 @@ const shuffle = array => {
     array.sort(() => Math.random() - 0.5);
 }
 
-const shuffleChoices = questions => {
+const shuffleChoicesAndRemoveAttempts = questions => {
     return questions.map(question => {
         const choices = [...question.choices, question.answer];
         shuffle(choices);
@@ -22,7 +22,7 @@ const shuffleQuestionsAndAnswers = quizzes => {
     for (let quiz of quizzes) {
         let questions = quiz.questions;
         shuffle(questions);
-        quiz.questions = shuffleChoices(questions);
+        quiz.questions = shuffleChoicesAndRemoveAttempts(questions);
     }
 }
 
@@ -74,7 +74,7 @@ const readOneQuiz = (req, res) => {
                     .status(404)
                     .json(err);
             } else {
-                quiz.questions = shuffleChoices(quiz.questions);
+                quiz.questions = shuffleChoicesAndRemoveAttempts(quiz.questions);
                 return res
                     .status(200)
                     .json(quiz);
