@@ -8,8 +8,14 @@ all signals are sent to the frontend to
     move to the next question  
 
 * allAnswered  
-    everyone has answered the current question or the question timer timed out
-    params: [{ hash: string, answer: string, time: number },]
+    everyone has answered the current question or the question timer timed out, returns the list of answers with the correct answer if it werent included  
+    params:  
+    [{ hash: string,  
+    answer: string,  
+    time: number,  
+    user: string,  
+    score: number,  
+    isCorrect: boolean},]
 
 * answerLocked  
     someone locked a question answer, resignals to the rest
