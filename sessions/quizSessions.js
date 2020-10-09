@@ -132,20 +132,31 @@ class SessionModel {
 
     startQuestionTransition(index) {
         this.acceptingAnswers = false;
+        const answerStrings = this.currentQuestionAnswers.map(ans => ans.answer);
+        const uniqueAnswers = new Set(answerStrings);
+        uniqueAnswers.add(this.currentQuestionCorrectAnswer)
+        const displayAnswersAnimationTime = uniqueAnswers.size * 2700;
         setTimeout(() => {
             this.acceptingAnswers = true;
             this.startQuestions(index);
-        }, 4000)
+        }, displayAnswersAnimationTime)
     }
 
     processAnswer(data, participant) {
         if (this.acceptingAnswers) {
-            const currentQuestionAnswers = this.answers.get(String(this.currentQuestionId));
-            const hasParticipantAnswered = this.currentQuestionAnswers.findIndex(
-                answer => answer.hash == participant.hash) != -1;
-            if(hasParticipantAnswered){
+            try{
+                this.currentQuestionAnswers = this.answers.get(String(this.currentQuestionId));
+                const hasParticipantAnswered = this.currentQuestionAnswers.findIndex(
+                    answer => answer.hash == participant.hash) != -1;
+                if(hasParticipantAnswered){
+                    return;
+                }
+            }
+            catch(e){
+                console.log('Error in processing answer', e.message);
                 return;
             }
+
             const isCorrect = data == this.currentQuestionCorrectAnswer;
             const time = this.calculateTimeDiff();
             const thisAnswer = {
@@ -157,23 +168,36 @@ class SessionModel {
                 isCorrect: isCorrect
             };
             try {
-                currentQuestionAnswers.push(thisAnswer);
+                this.currentQuestionAnswers.push(thisAnswer);
             } catch (e) {
                 console.log('Error in processing answer (adding to current answers)');
                 console.log(e.message);
                 return;
             }
             this.workspace.emit('answerLocked', participant.hash);
-
-            if (this.participants.length === currentQuestionAnswers.length) {
+            if (this.participants.length === this.currentQuestionAnswers.length) {
                 clearTimeout(this.questionTimer);
-                this.workspace.emit('allAnswered', currentQuestionAnswers);
+                if(this.currentQuestionAnswers.every(ans => !ans.isCorrect)){
+                    this.addCorrectAnswer(this.currentQuestionAnswers); 
+                }
+                this.workspace.emit('allAnswered', this.currentQuestionAnswers);
                 this.startQuestionTransition(this.currentQuestionIndex + 1);
             }
             console.log(this.answers)
         } else {
             console.log('not accepting answers now, transitioning questions')
         }
+    }
+
+    addCorrectAnswer(currentQuestionAnswers){
+        currentQuestionAnswers.push({
+            hash: '-1',
+            answer: this.quiz.questions[this.currentQuestionIndex].answer,
+            time: -1,
+            user: '-1',
+            score: -1,
+            isCorrect: true
+        })
     }
 
     calculateTimeDiff = () => {
