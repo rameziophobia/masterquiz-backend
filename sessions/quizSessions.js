@@ -105,6 +105,7 @@ class SessionModel {
                 } else {
                     console.log('quiz found');
                     this.addAnswerAttemptsToQuiz(quiz);
+                    quiz.timesAnswered = quiz.questions[0].attempts.length;
                     try {
                         await quiz.save();
                     } catch {
