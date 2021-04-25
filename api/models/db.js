@@ -4,7 +4,7 @@ let dbURL = `mongodb://${host}/MasterQuiz`;
 const readLine = require('readline');
 
 if (process.env.NODE_ENV === 'production') {
-    dbURL = process.env.MLAB_URI;
+    dbURL = process.env.MONGO_URI;
 }
 
 const connect = () => {
