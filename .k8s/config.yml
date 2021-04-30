@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: masterquiz-api-configmap
+  namespace: masterquiz
+data:
+  PORT: "8000"

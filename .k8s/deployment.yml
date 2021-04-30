@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: masterquiz-api-deployment
+  namespace: masterquiz
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: masterquiz-api
+  template:
+    metadata:
+      labels:
+        app: masterquiz-api
+    spec:
+      containers:
+        - name: masterquiz-api
+          image: digitalphoenixx/masterquiz-api:latest
+          imagePullPolicy: "IfNotPresent"
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          env:
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: PORT
+                  name: masterquiz-api-configmap
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  key: MONGO_URI
+                  name: masterquiz-api-secret
+          ports:
+            - containerPort: 8000
