@@ -5,6 +5,8 @@
 
 REST API for MasterQuiz Frontend app. The API provides CRUD functionality for required endpoints as well as session (Socket) for mutli-user real time quizzes.
 
+View [Endpoints Docs](./docs/endpoints.md).
+
 ## Run the code locally
 
 1) Clone the repo
