@@ -1,5 +1,7 @@
 # Endpoints
 
+All endpoints are after /api/. e.g. /api/quizzes.
+
 ## /quizzes
 
 | Request Type | Params   | Description       |
