@@ -47,7 +47,7 @@ Replace build tag and port used with appropriate values.
 Duplicate the ``.env`` file and fill in the data. Replace the port number in the ``docker-compose.yml`` file with preferred port. Then run
 
 ```sh
-docker-compose up
+docker-compose -f docker-compose.yml -f docker-compose.local.yml up -d
 ```
 
 ### K8s
