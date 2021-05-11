@@ -7,7 +7,7 @@ REST API for MasterQuiz Frontend app. The API provides CRUD functionality for re
 
 Deployed: [masterquiz-api.digitalphoenixx.live](masterquiz-api.digitalphoenixx.live).
 
-View [Endpoints Docs](./docs/endpoints.md).
+View [Endpoints Docs](./docs/endpoints.md) & [Sockets Docs](sessions/socketsMsgsDoc.md).
 
 ## Run the code locally
 
